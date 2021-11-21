@@ -1,12 +1,18 @@
 <template>
   <div>
     <h1
-      v-html="message"
+      v-html="leads.message"
       v-bind:class="classObject"
     ></h1>
+    <p>{{ leads.description }}</p>
+    <button
+      @click="addDescription"
+    >
+      large
+    </button>
     <hr>
     <child-component
-      v-show="isShow"
+      v-if="isShow"
     >
       <template #head>
         <p>head slot</p>
@@ -19,6 +25,7 @@
         <p>foot slot</p>
       </template>
     </child-component>
+    <button @click="toggleShow">toggle isShow</button>
     <hr>
     <p v-if="id === 1">1</p>
     <template v-else-if="id === 2">
@@ -37,26 +44,114 @@
       </child-component>
     </template>
     <hr>
-    <button @click="incrementCount">Add to count</button>
-    <p>{{ count }}回クリックしました</p>
+    <counter></counter>
     <hr>
     <input type="text" v-model="inputText">
     <p>computed: {{ getUpperCaseText }}</p>
     <p>methods: {{ showUpperCaseText() }}</p>
+    <hr>
+    <template v-for="category in categories">
+      <p :key="$uuid.v4()">
+        {{ category }}
+      </p>
+    </template>
+    <button @click="updateText">update text</button>
+    <form>
+      <div>
+        <span>名前:</span>
+        <input-text v-model="form.name"></input-text>
+        <p>名前: {{ getInputName }}</p>
+      </div>
+      <div>
+        <span>性別:</span>
+        <label>
+          男性
+          <input type="radio" value="male" v-model="form.sex">
+        </label>
+        <label>
+          女性
+          <input type="radio" value="female" v-model="form.sex">
+        </label>
+        <p>性別: {{ getRadioValue }}</p>
+      </div>
+      <div>
+        <select v-model="form.selected">
+          <option disabled value="">--出身地を選択してください--</option>
+          <option v-for="option in form.options"
+            :value="option.value"
+            :key="option.id"
+          >
+            {{ option.value }}
+          </option>
+        </select>
+        <p>出身地:{{ getSelectValue }}</p>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" v-model="form.checked">
+          20歳以上です
+        </label>
+        <p>チェックボックス: {{ getCheckBoxValue }}</p>
+      </div>
+    </form>
+    <hr>
+    <template v-for="category in categories">
+      <p :key="$uuid.v4()">
+        {{category}}
+      </p>
+    </template>
+    <button @click="updateText">update text</button>
+    <article v-for="post in posts"
+      :key="$uuid.v4()"
+    >
+      <h2>{{ post.title }}</h2>
+      <p>{{ post.body }}</p>
+    </article>
+    <hr>
   </div>
 </template>
 
 <script>
 import ChildComponent from 'Components/ChildComponent';
+import Counter from 'Components/Counter';
+import InputText from 'Components/InputText';
+import axios from 'axios';
 
 export default {
+  beforeCreate() {
+    console.log('beforeCreate');
+    console.log(this.leads);
+  },
+  created() {
+    console.log('created');
+    console.log(this.posts);
+    axios.get('/data.json').then(res => {
+      this.posts = res.data.posts;
+    });
+  },
+  beforeMount() {
+    console.log('beforeMount');
+    console.log(this.$el);
+  },
+  mounted() {
+    console.log('mounted');
+    // console,log(this.$el);
+  },
+  beforeUpdate() {
+    console.log('beforeUpdate');
+  },
+  updated() {
+    console.log('updated');
+  },
   //es6のメソッド記法
   data() {
     return {
-      message: '<span>Hello Vue!</span>',
+      leads: {
+        message: '<span>Hello Vue</span>',
+        description: '',
+      },
       isShow: true,
       id: 2,
-      count: 0,
       inputText: '',
       classObject: {
         'is-green': true,
@@ -74,7 +169,33 @@ export default {
           id: this.$uuid.v4(),
           title: '3番目のリスト',
         }
-      ]
+      ],
+      form: {
+        name: '',
+        sex: '',
+        selected: '',
+        options: [
+          {
+            id: this.$uuid.v4(),
+            value: '東京都'
+          },
+          {
+            id: this.$uuid.v4(),
+            value: '埼玉県'
+          },
+          {
+            id: this.$uuid.v4(),
+            value: '神奈川県'
+          },
+          {
+            id: this.$uuid.v4(),
+            value: '千葉県'
+          },
+        ],
+        checked: false,
+      },
+      categories: ['Javascript', 'jQuery'],
+      posts: [],
     }
   },
   methods: {
@@ -83,19 +204,59 @@ export default {
     },
     showUpperCaseText() {
       const upperCaseText = this.inputText.toUpperCase();
-      console.log('method: ${upperCaseText}');
+      // console.log('method: ${upperCaseText}');
       return upperCaseText;
+    },
+    addDescription() {
+      this.leads.description = 'Vue-loesson';
+    },
+    changeTextSize() {
+      this.classObject = Object.assign({}, this.classObject, {
+        'is-large': true,
+      });
+    },
+    toggleShow() {
+      this.isShow = !this.isShow;
+    },
+    updateText() {
+      this.categories.splice(1, 1, 'Vue.js');
     }
   },
   computed: {
     getUpperCaseText() {
       const UpperCaseText = this.inputText.toUpperCase();
-      console.log('computed: ${UpperCaseText}');
+      // console.log('computed: ${UpperCaseText}');
       return UpperCaseText;
-    }
+    },
+    getInputName() {
+      return this.form.name;
+    },
+    getRadioValue() {
+      return this.form.sex;
+    },
+    getSelectValue() {
+      return this.form.selected;
+    },
+    getCheckBoxValue() {
+      return this.form.checked;
+    },
+  },
+  watch: {
+    inputText(value, oldValue) {
+      console.log('value->' + value);
+      console.log('oldValue ->' + oldValue);
+    },
+    leads: {
+      handler() {
+        console.log('add description');
+      },
+      deep: true,
+    },
   },
   components: {
     ChildComponent,
+    Counter,
+    InputText,
   }
 }
 </script>
@@ -103,6 +264,9 @@ export default {
 <style scoped>
   .is-green {
     color: green;
+  }
+  .is-large {
+    font-size: 48px;
   }
   hr {
     margin: 16px 0;
